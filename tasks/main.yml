@@ -1,0 +1,75 @@
+---
+- name: Install java
+  apt:
+    name: openjdk-11-jre
+
+- name: Check if syncrify is installed
+  stat:
+    path: /opt/Syncrify
+  register: syncrify_folder
+
+- block:
+  - name: Download syncrify server to local machine
+    get_url:
+      url: https://www2.synametrics.com/files/Syncrify/SyncrifyLinux64.tar
+      dest: "{{ global_cache_dir | mandatory }}/syncrify"
+
+  - name: Create temp directory to extract to
+    tempfile:
+      suffix: synrify
+      state: directory
+    register: tmpdir
+
+  - name: Unarchive syncrify files
+    unarchive:
+      src: "{{ global_cache_dir | mandatory }}/syncrify"
+      dest: "{{ tmpdir.path }}"
+
+  - name: Set executable bit for Install.sh
+    file:
+      path: "{{ tmpdir.path }}/Install.sh"
+      owner: root
+      group: root
+      mode: 0700
+
+  - name: Run install script
+    command: sh Install.sh
+    args:
+      chdir: "{{ tmpdir.path }}"
+
+  # Block condition
+  when: not syncrify_folder.stat.exists
+
+- name: Write configurion AppConfig.xml
+  template:
+    src: AppConfig.xml.j2
+    dest: /opt/Syncrify/config/AppConfig.xml
+    owner: "{{ syncrify_server_user }}"
+    group: "{{ syncrify_server_group }}"
+    mode: 0640
+  notify: Enable and restart syncrify service
+
+- name: Ensure group "{{ syncrify_server_group }}" exists
+  group:
+    name: "{{ syncrify_server_group }}"
+
+- name: Add syncrify user
+  user:
+    name: "{{ syncrify_server_user }}"
+    group: "{{ syncrify_server_group }}"
+
+- name: Set owner and group for Syncrify files
+  file:
+    path: /opt/Syncrify
+    owner: "{{ syncrify_server_user }}"
+    group: "{{ syncrify_server_group }}"
+    recurse: yes
+
+- name: Add syncrify systemd service
+  template:
+    src: syncrify.service.j2
+    dest: /etc/systemd/system/syncrify.service
+    owner: root
+    group: root
+    mode: 0644
+  notify: Reload systemd units

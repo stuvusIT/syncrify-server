@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- {{ ansible_managed }}-->
+<Configuration>
+	<parameters>
+		{% for option,value in syncrify_server_options.items() %}
+			{#- default: string -#}
+			{%- set type = 1 -%}
+			{%- if value is defined and value | type == "bool" -%}
+				{#- bool -#}
+			{%- set type = 4 -%}
+			{%- set value = value | lower -%}
+			{%- elif value is defined and (value | type == "int" or value | type == "float") -%}
+				{#- numeric -#}
+				{%- set type = 2 -%}
+			{%- elif value | type == "list" or value | type == "dict" -%}
+				{{ "Your syncrify config contains a list or dict, which is invalid here"/0 }}
+			{%- endif -%}
+		<parameter name="{{ option }}" type="{{ type }}" value="{{ value }}"></parameter>
+		{% endfor %}
+	</parameters>
+</Configuration>

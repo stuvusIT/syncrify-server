@@ -1,0 +1,4 @@
+---
+syncrify_server_user: syncrify
+syncrify_server_group: syncrify
+syncrify_server_options: {}

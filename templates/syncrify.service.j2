@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Service for Syncrify Start on boot
+After=network.target
+
+[Service]
+Type=forking
+WorkingDirectory=/opt/Syncrify
+ExecStart=/opt/Syncrify/run.sh
+User={{ syncrify_server_user }}
+Group={{ syncrify_server_group }}
+LimitNOFILE=8192
+
+[Install]
+WantedBy=multi-user.target
